@@ -13,6 +13,8 @@ import { UsersModule } from './core/users/users.module';
 import { LinksService } from './core/links/links.service';
 import { LinksModule } from './core/links/links.module';
 import { ReportsModule } from './core/reports/reports.module';
+import { AnalyticsModule } from './core/analytics/analytics.module';
+
 
 @Module({
   imports: [
@@ -31,6 +33,7 @@ import { ReportsModule } from './core/reports/reports.module';
     UsersModule,
     LinksModule,
     ReportsModule,
+    AnalyticsModule,
   ],
   providers: [
     PrismaService,

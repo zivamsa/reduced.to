@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EntityService } from '../entity.service';
 import { Prisma, PrismaService, Visit } from '@reduced.to/prisma';
 import { AppConfigService } from '@reduced.to/config';
+import { CountryVisitCountDto } from './dto/CountryVisitCountDto';
 
 @Injectable()
 export class AnalyticsService extends EntityService<Visit> {
@@ -38,32 +39,40 @@ export class AnalyticsService extends EntityService<Visit> {
     };
   }
 
-    // async countVisitsForLink(linkId: string): Promise<number> {
-    async countVisitsForLink(where?: Prisma.VisitWhereInput): Promise<number> {
-        // const where: Prisma.VisitWhereInput = {
-        //   linkId: { equals: linkId }, // Specify the condition for linkId equality
-        // };
+    async countVisitsForLink(linkId: string): Promise<number> {
+        const where: Prisma.VisitWhereInput = {
+          linkId: { equals: linkId },
+        };
     
         return this.prismaService.visit.count({ where });
       }
 
-      async countVisitsByGeo(linkId: string): Promise<{ geo: string; count: number }[]> {
-        const visitGeoCounts = await this.prismaService.visit.groupBy({
-          by: ['geo'],
+      async countVisitsByGeo(linkId: string):Promise<CountryVisitCountDto[]> {
+        const allVisits = await this.prismaService.visit.findMany({
           where: {
-            linkId,
+              linkId: linkId,
           },
-          _count: {
-            geo: true,
-          },
-        });
-    
-        return visitGeoCounts.map((result) => ({
-          geo: result.geo.toString() ?? 'Unknown', 
-          count: result._count?.geo ?? 0,
-        }));
+      });
+
+      const countryCountsMap = new Map<string, number>();
+
+      allVisits.forEach((visit) => {
+          let geoLocation = null;
+          geoLocation = visit.geo;
+          const country = geoLocation?.country || 'Unknown';
+          const currentCount = countryCountsMap.get(country) || 0;
+          countryCountsMap.set(country, currentCount + 1);
+      });
+
+      const resultArray: CountryVisitCountDto[] = [];
+
+      countryCountsMap.forEach((count, country) => {
+          resultArray.push({
+              country: country,
+              count: count,
+          });
+      });
+
+      return resultArray;
       }
-//   async countByLinkId(where?: Prisma.VisitWhereInput): Promise<number> {
-//     return this.prismaService.visit.count({ where });
-//   }
 }

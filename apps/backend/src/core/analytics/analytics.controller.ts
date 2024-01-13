@@ -1,10 +1,11 @@
-import { Controller,Get, Query, UseGuards } from '@nestjs/common';
+import { Controller,Get, Param, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Role } from '@reduced.to/prisma';
 import { Roles } from '../../shared/decorators';
 import { AnalyticsService } from './analytics.service';
 import { CountQueryDto } from './dto/count-query.dto';
+import { CountryVisitCountDto } from './dto/CountryVisitCountDto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller({
@@ -15,25 +16,16 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('countClicks')
-  @Roles(Role.USER)
+  @Roles(Role.ADMIN)
   async count(@Query() query : CountQueryDto) {
-    const filter: Record<string, any> = {};
-    filter.linkId = query;
-
-    // Perform the count operation with the dynamic filter
-    const count = await this.analyticsService.countVisitsForLink(filter);
-
+    const linkId = query.linkId;
+    const count = await this.analyticsService.countVisitsForLink(linkId);
     return { count };
   }
 
   @Get('countByGeo')
-  @Roles(Role.USER)
-  async countByGeo(@Query() query: CountQueryDto): Promise<{ geo: string; count: number }[]> {
-    // const filter: Record<string, any> = {};
-    // filter.linkId = linkId;
-
-    // Perform the count operation with the dynamic filter
-    const linkId = query.linkId;
+  @Roles(Role.ADMIN)
+    async getVisitCountsByCountry(@Param('linkId') linkId: string): Promise<CountryVisitCountDto[]> {
     return this.analyticsService.countVisitsByGeo(linkId);
   }
 }
